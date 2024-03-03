@@ -35,12 +35,19 @@ pub fn render(browser: &Browser, f: &mut Frame) {
         Style::default().fg(Color::Red),
     );
 
-    let keys_footer =
-        Paragraph::new(Line::from(keys_hint)).block(Block::default().borders(Borders::ALL));
+    let keys_footer = Paragraph::new(Line::from(keys_hint)).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded),
+    );
 
     let url = Span::styled(browser.url.to_string(), Style::default().fg(Color::Red));
 
-    let url_footer = Paragraph::new(Line::from(url)).block(Block::default().borders(Borders::ALL));
+    let url_footer = Paragraph::new(Line::from(url)).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded),
+    );
 
     let footer_chunks = Layout::default()
         .direction(Direction::Horizontal)

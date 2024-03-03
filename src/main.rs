@@ -6,6 +6,7 @@ use tui::Tui;
 use update::update;
 
 mod browser;
+mod engine;
 mod event;
 mod network;
 mod tui;

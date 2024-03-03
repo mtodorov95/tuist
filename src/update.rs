@@ -9,7 +9,9 @@ pub fn update(browser: &mut Browser, key_event: KeyEvent) {
         KeyCode::Enter => {
             // Hardcoded for now
             let url = "https://mariotodorov.com";
-            let html = network::request(url.to_string()).unwrap();
+            let response = network::request(url.to_string()).unwrap();
+            // let root = crate::engine::parse(response);
+            let html = crate::engine::simple_parse(response);
             browser.set_content(html);
             browser.set_url(url.to_string());
         }
