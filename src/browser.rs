@@ -33,7 +33,11 @@ impl Browser {
 
     pub fn scroll_down(&mut self) {
         if self.scroll.checked_add(5).is_some() {
-            self.scroll += 5;
+            let scroll = std::cmp::min(
+                self.scroll + 5,
+                self.content.lines().count().try_into().unwrap(),
+            );
+            self.scroll = scroll;
         }
     }
 }

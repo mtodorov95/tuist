@@ -4,4 +4,5 @@ mod html;
 mod layout;
 
 pub use html::parse;
-pub use html::simple_parse;
+pub use dom::*;
+pub use layout::*;

@@ -1,6 +1,10 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::{browser::Browser, network};
+use crate::{
+    browser::Browser,
+    engine::get_text_content,
+    network,
+};
 
 pub fn update(browser: &mut Browser, key_event: KeyEvent) {
     match key_event.code {
@@ -10,9 +14,9 @@ pub fn update(browser: &mut Browser, key_event: KeyEvent) {
             // Hardcoded for now
             let url = "https://mariotodorov.com";
             let response = network::request(url.to_string()).unwrap();
-            // let root = crate::engine::parse(response);
-            let html = crate::engine::simple_parse(response);
-            browser.set_content(html);
+            let root = crate::engine::parse(response);
+            let content = get_text_content(&root, &mut String::new());
+            browser.set_content(content);
             browser.set_url(url.to_string());
         }
         KeyCode::Esc | KeyCode::Char('q') => browser.quit(),

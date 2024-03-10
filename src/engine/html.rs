@@ -93,10 +93,17 @@ impl Parser {
         assert!(self.consume_char() == '<');
         if self.next_char() == '!' {
             self.consume_while(|c| c != '>');
+            self.consume_char();
             return None;
         }
 
         let tag_name = self.parse_tag_name();
+
+        if tag_name == "script" {
+            self.skip_element(&tag_name);
+            return None;
+        }
+
         let attrs = self.parse_attributes();
 
         if SELF_CLOSING_TAGS.contains(&tag_name.as_str()) {
@@ -116,6 +123,19 @@ impl Parser {
         Some(elem(tag_name, attrs, children))
     }
 
+    fn skip_element(&mut self, tag_name: &str) {
+        loop {
+            if self.starts_with(&format!("</{}", tag_name)) {
+                break;
+            }
+            self.consume_char();
+        }
+        assert!(self.consume_char() == '<');
+        assert!(self.consume_char() == '/');
+        assert!(self.parse_tag_name() == tag_name);
+        assert!(self.consume_char() == '>');
+    }
+
     fn parse_attributes(&mut self) -> AttrMap {
         let mut attrs = HashMap::new();
         loop {
@@ -132,12 +152,17 @@ impl Parser {
 
     fn parse_attr(&mut self) -> (String, String) {
         let name = self.parse_attr_name();
-        assert!(self.consume_char() == '=');
-        let value = self.parse_attr_value();
+        let value = match self.consume_char() {
+            '=' => self.parse_attr_value(),
+            _ => "".into(),
+        };
         (name, value)
     }
 
     fn parse_attr_value(&mut self) -> String {
+        if self.next_char() == '\\' {
+            self.consume_char();
+        }
         let open_quote = self.consume_char();
         assert!(open_quote == '"' || open_quote == '\'');
         let value = self.consume_while(|c| c != open_quote);
@@ -157,21 +182,4 @@ pub fn parse(source: String) -> Node {
     } else {
         elem("html".to_string(), HashMap::new(), nodes)
     }
-}
-
-pub fn simple_parse(source: String) -> String {
-    let mut text = String::new();
-    let mut in_tag = false;
-    source.chars().for_each(|c| match c {
-        '<' => in_tag = true,
-        '>' => in_tag = false,
-        other => {
-            if !in_tag {
-                text.push(other);
-            }
-        }
-    });
-    text.lines()
-        .map(|l| format!("{}\n", l.trim_start()))
-        .collect()
 }

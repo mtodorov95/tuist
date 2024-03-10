@@ -2,7 +2,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Style},
     text::{Line, Span},
-    widgets::{Block, BorderType, Borders, Paragraph},
+    widgets::{Block, BorderType, Borders, Paragraph, Wrap},
     Frame,
 };
 
@@ -21,10 +21,12 @@ pub fn render(browser: &Browser, f: &mut Frame) {
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded);
 
+
     let content = Paragraph::new(browser.content.to_string())
         .block(content_block)
         .style(Style::default().fg(Color::Yellow))
         .alignment(Alignment::Left)
+        .wrap(Wrap { trim: false})
         .scroll((browser.scroll, 0));
 
     f.render_widget(content, chunks[0]);
