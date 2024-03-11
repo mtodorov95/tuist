@@ -4,7 +4,7 @@ use crate::engine::dom::elem;
 
 use super::dom::{text, AttrMap, Node};
 
-static SELF_CLOSING_TAGS: [&'static str; 14] = [
+static SELF_CLOSING_TAGS: [&str; 14] = [
     "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source",
     "track", "wbr",
 ];

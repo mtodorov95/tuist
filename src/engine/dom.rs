@@ -20,12 +20,12 @@ pub struct ElementData {
 
 impl ElementData {
     pub fn id(&self) -> Option<&String> {
-        return self.attrs.get("id");
+        self.attrs.get("id")
     }
 
     pub fn classes(&self) -> HashSet<&str> {
         match self.attrs.get("class") {
-            Some(class_list) => class_list.split(" ").collect(),
+            Some(class_list) => class_list.split(' ').collect(),
             None => HashSet::new(),
         }
     }
@@ -34,15 +34,15 @@ impl ElementData {
 pub type AttrMap = HashMap<String, String>;
 
 pub fn elem(name: String, attrs: AttrMap, children: Vec<Node>) -> Node {
-    return Node {
+    Node {
         children,
         node_type: NodeType::Element(ElementData { tag: name, attrs }),
-    };
+    }
 }
 
 pub fn text(data: String) -> Node {
-    return Node {
+    Node {
         children: Vec::new(),
         node_type: NodeType::Text(data),
-    };
+    }
 }

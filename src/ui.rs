@@ -1,12 +1,13 @@
 use ratatui::{
-    layout::{Alignment, Constraint, Direction, Layout},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
-    text::{Line, Span},
-    widgets::{Block, BorderType, Borders, Paragraph, Wrap},
+    symbols,
+    text::{Line, Span, Text},
+    widgets::{Block, BorderType, Borders, Padding, Paragraph, Tabs, Wrap},
     Frame,
 };
 
-use crate::browser::Browser;
+use crate::browser::{Browser, Screen};
 
 pub fn render(browser: &Browser, f: &mut Frame) {
     let chunks = Layout::default()
@@ -19,43 +20,92 @@ pub fn render(browser: &Browser, f: &mut Frame) {
         .title("Tuist")
         .title_alignment(Alignment::Center)
         .borders(Borders::ALL)
-        .border_type(BorderType::Rounded);
+        .border_type(BorderType::Rounded)
+        .padding(Padding::horizontal(2));
 
-
-    let content = Paragraph::new(browser.content.to_string())
-        .block(content_block)
-        .style(Style::default().fg(Color::Yellow))
-        .alignment(Alignment::Left)
-        .wrap(Wrap { trim: false})
-        .scroll((browser.scroll, 0));
+    let content = match browser.has_content() {
+        false => Paragraph::new("New Tab")
+            .block(content_block)
+            .style(Style::default().fg(Color::Yellow))
+            .alignment(Alignment::Center),
+        true => Paragraph::new(&*browser.active_tab().content)
+            .block(content_block)
+            .style(Style::default().fg(Color::Yellow))
+            .alignment(Alignment::Left)
+            .wrap(Wrap { trim: false })
+            .scroll((browser.scroll, 0)),
+    };
 
     f.render_widget(content, chunks[0]);
 
-    // Info
-    let keys_hint = Span::styled(
-        "Press 'Esc', 'Ctrl-C' or 'q' to exit.",
-        Style::default().fg(Color::Red),
-    );
+    // Tab bar
+    let mut tab_items = Vec::<Line>::new();
 
-    let keys_footer = Paragraph::new(Line::from(keys_hint)).block(
-        Block::default()
+    for tab in &browser.tabs {
+        tab_items.push(Line::from(Span::styled(
+            &tab.url,
+            Style::default().fg(Color::Yellow),
+        )));
+    }
+
+    let tabs = Tabs::new(tab_items)
+        .block(
+            Block::default()
+                .title("Tabs")
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded),
+        )
+        .style(Style::default().fg(Color::Yellow))
+        .highlight_style(Style::default().fg(Color::Red))
+        .select(browser.active_tab)
+        .divider(symbols::DOT)
+        .padding("> ", " <");
+
+    f.render_widget(tabs, chunks[1]);
+
+    // Edit screen
+    if let Screen::Edit = browser.current_screen {
+        let area = create_centered_rect(60, 5, f.size());
+        let url_block = Block::default().title("Address").borders(Borders::ALL);
+
+        let url_text = Paragraph::new(&*browser.active_tab().url).block(url_block);
+        f.render_widget(url_text, area);
+    }
+
+    // Exit screen
+    if let Screen::Exit = browser.current_screen {
+        let area = create_centered_rect(60, 5, f.size());
+        let popup_block = Block::default()
+            .title("Y/N")
             .borders(Borders::ALL)
-            .border_type(BorderType::Rounded),
-    );
+            .style(Style::default().fg(Color::Red));
 
-    let url = Span::styled(browser.url.to_string(), Style::default().fg(Color::Red));
+        let exit_text = Text::styled("Are you sure you want to exit? (y/n)", Style::default());
 
-    let url_footer = Paragraph::new(Line::from(url)).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_type(BorderType::Rounded),
-    );
+        let exit_paragraph = Paragraph::new(exit_text)
+            .alignment(Alignment::Center)
+            .style(Style::default().fg(Color::Yellow))
+            .block(popup_block);
+        f.render_widget(exit_paragraph, area);
+    }
+}
 
-    let footer_chunks = Layout::default()
+fn create_centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    let layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Percentage(percent_y),
+            Constraint::Percentage((100 - percent_y) / 2),
+        ])
+        .split(r);
+
+    Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(chunks[1]);
-
-    f.render_widget(url_footer, footer_chunks[0]);
-    f.render_widget(keys_footer, footer_chunks[1]);
+        .constraints([
+            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Percentage(percent_x),
+            Constraint::Percentage((100 - percent_x) / 2),
+        ])
+        .split(layout[1])[1]
 }
