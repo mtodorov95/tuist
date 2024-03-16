@@ -14,10 +14,17 @@ impl Default for Screen {
 #[derive(Debug, Default)]
 pub struct Tab {
     pub url: String,
+    pub url_field: String,
     pub content: String,
 }
 
-#[derive(Debug, Default)]
+impl Tab {
+    fn set_url(&mut self) {
+        self.url = self.url_field.clone();
+    }
+}
+
+#[derive(Debug)]
 pub struct Browser {
     pub tabs: Vec<Tab>,
     pub active_tab: usize,
@@ -60,6 +67,23 @@ impl Browser {
         self.tabs.get(self.active_tab).unwrap()
     }
 
+    pub fn new_tab(&mut self) {
+        let new_tab = Tab::default();
+        let index = self.tabs.len();
+        self.tabs.push(new_tab);
+        self.active_tab = index;
+    }
+
+    pub fn next_tab(&mut self) {
+        self.active_tab = std::cmp::min(self.active_tab + 1, self.tabs.len() - 1);
+    }
+
+    pub fn prev_tab(&mut self) {
+        if self.active_tab.checked_sub(1).is_some() {
+            self.active_tab -= 1;
+        }
+    }
+
     pub fn set_content(&mut self, value: String) {
         self.active_tab_mut().content = value;
     }
@@ -68,8 +92,8 @@ impl Browser {
         !self.active_tab().content.is_empty()
     }
 
-    pub fn set_url(&mut self, value: String) {
-        self.active_tab_mut().url = value;
+    pub fn set_url(&mut self) {
+        self.active_tab_mut().set_url();
     }
 
     pub fn scroll_up(&mut self) {
@@ -98,9 +122,67 @@ impl Browser {
 mod tests {
     use super::*;
     #[test]
-    fn sets_browser_content_correctly() {
-        let mut browser = Browser::default();
-        browser.set_content("hello".into());
-        assert_eq!(browser.active_tab().content, "hello".to_string());
+    fn instantiates_self_correctly() {
+        let browser = Browser::new();
+        assert_eq!(browser.active_tab, 0);
+        assert_eq!(browser.tabs.len(), 1);
+        assert_eq!(browser.active_tab().url_field, "".to_string());
+        assert_eq!(browser.active_tab().url, "".to_string());
+        assert_eq!(browser.active_tab().content, "".to_string());
+    }
+
+    #[test]
+    fn can_not_scroll_below_zero() {
+        let mut browser = Browser::new();
+        assert_eq!(browser.scroll, 0);
+        browser.scroll_down();
+        assert_eq!(browser.scroll, 0);
+    }
+
+    #[test]
+    fn sets_active_tab_content() {
+        let mut browser = Browser::new();
+        browser.set_content("Hello".to_string());
+        assert_eq!(browser.active_tab().content, "Hello".to_string());
+    }
+
+    #[test]
+    fn creates_new_tab() {
+        let mut browser = Browser::new();
+        browser.new_tab();
+        assert_eq!(browser.active_tab, 1);
+        assert_eq!(browser.tabs.len(), 2);
+    }
+
+    #[test]
+    fn switches_to_next_tab() {
+        let mut browser = Browser::new();
+        browser.new_tab();
+        browser.new_tab();
+        assert_eq!(browser.tabs.len(), 3);
+        browser.active_tab = 0;
+
+        browser.next_tab();
+        assert_eq!(browser.active_tab, 1);
+        browser.next_tab();
+        assert_eq!(browser.active_tab, 2);
+        browser.next_tab();
+        assert_eq!(browser.active_tab, 2);
+    }
+
+    #[test]
+    fn switches_to_previous_tab() {
+        let mut browser = Browser::new();
+        browser.new_tab();
+        browser.new_tab();
+        assert_eq!(browser.tabs.len(), 3);
+
+        assert_eq!(browser.active_tab, 2);
+        browser.prev_tab();
+        assert_eq!(browser.active_tab, 1);
+        browser.prev_tab();
+        assert_eq!(browser.active_tab, 0);
+        browser.prev_tab();
+        assert_eq!(browser.active_tab, 0);
     }
 }

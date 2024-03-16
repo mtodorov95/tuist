@@ -1,7 +1,6 @@
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
-    symbols,
     text::{Line, Span, Text},
     widgets::{Block, BorderType, Borders, Padding, Paragraph, Tabs, Wrap},
     Frame,
@@ -57,9 +56,7 @@ pub fn render(browser: &Browser, f: &mut Frame) {
         )
         .style(Style::default().fg(Color::Yellow))
         .highlight_style(Style::default().fg(Color::Red))
-        .select(browser.active_tab)
-        .divider(symbols::DOT)
-        .padding("> ", " <");
+        .select(browser.active_tab);
 
     f.render_widget(tabs, chunks[1]);
 
@@ -68,7 +65,7 @@ pub fn render(browser: &Browser, f: &mut Frame) {
         let area = create_centered_rect(60, 5, f.size());
         let url_block = Block::default().title("Address").borders(Borders::ALL);
 
-        let url_text = Paragraph::new(&*browser.active_tab().url).block(url_block);
+        let url_text = Paragraph::new(browser.active_tab().url_field.as_str()).block(url_block);
         f.render_widget(url_text, area);
     }
 
