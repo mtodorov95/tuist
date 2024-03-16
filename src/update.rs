@@ -37,6 +37,10 @@ pub fn update(browser: &mut Browser, key_event: KeyEvent) {
                     browser.next_tab();
                 }
             }
+            // Temp key bind
+            KeyCode::Char('d') => {
+                browser.close_active_tab();
+            }
             _ => {}
         },
         Screen::Edit => match key_event.code {

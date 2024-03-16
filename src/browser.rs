@@ -74,6 +74,20 @@ impl Browser {
         self.active_tab = index;
     }
 
+    pub fn close_active_tab(&mut self) {
+        match self.tabs.len() {
+            1 => self.current_screen = Screen::Exit,
+            length => {
+                if self.active_tab == length - 1 {
+                    self.prev_tab();
+                    self.tabs.remove(length - 1);
+                } else {
+                    self.tabs.remove(self.active_tab);
+                }
+            }
+        }
+    }
+
     pub fn next_tab(&mut self) {
         self.active_tab = std::cmp::min(self.active_tab + 1, self.tabs.len() - 1);
     }
@@ -184,5 +198,32 @@ mod tests {
         assert_eq!(browser.active_tab, 0);
         browser.prev_tab();
         assert_eq!(browser.active_tab, 0);
+    }
+
+    #[test]
+    fn closes_non_last_tab_correctly() {
+        let mut browser = Browser::new();
+        browser.new_tab();
+        browser.new_tab();
+        browser.new_tab();
+        assert_eq!(browser.active_tab, 3);
+
+        browser.active_tab = 1;
+        browser.close_active_tab();
+        assert_eq!(browser.tabs.len(), 3);
+        assert_eq!(browser.active_tab, 1);
+    }
+
+    #[test]
+    fn closes_last_tab_correctly() {
+        let mut browser = Browser::new();
+        browser.new_tab();
+        browser.new_tab();
+        browser.new_tab();
+        assert_eq!(browser.active_tab, 3);
+
+        browser.close_active_tab();
+        assert_eq!(browser.tabs.len(), 3);
+        assert_eq!(browser.active_tab, 2);
     }
 }
