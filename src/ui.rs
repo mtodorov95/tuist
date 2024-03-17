@@ -2,17 +2,19 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span, Text},
-    widgets::{Block, BorderType, Borders, Padding, Paragraph, Tabs, Wrap},
+    widgets::{Block, BorderType, Borders, Clear, Padding, Paragraph, Tabs, Wrap},
     Frame,
 };
 
 use crate::browser::{Browser, Screen};
 
-pub fn render(browser: &Browser, f: &mut Frame) {
+pub fn render(browser: &mut Browser, f: &mut Frame) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Min(1), Constraint::Length(3)])
         .split(f.size());
+
+    browser.set_content_area_height(chunks[0].height);
 
     // Content
     let content_block = Block::default()
@@ -32,7 +34,7 @@ pub fn render(browser: &Browser, f: &mut Frame) {
             .style(Style::default().fg(Color::Yellow))
             .alignment(Alignment::Left)
             .wrap(Wrap { trim: false })
-            .scroll((browser.scroll, 0)),
+            .scroll((*browser.scroll(), 0)),
     };
 
     f.render_widget(content, chunks[0]);
@@ -63,15 +65,22 @@ pub fn render(browser: &Browser, f: &mut Frame) {
     // Edit screen
     if let Screen::Edit = browser.current_screen {
         let area = create_centered_rect(60, 5, f.size());
-        let url_block = Block::default().title("Address").borders(Borders::ALL);
+        f.render_widget(Clear, area);
+        let url_block = Block::default()
+            .title("Address")
+            .borders(Borders::ALL)
+            .style(Style::default().fg(Color::Yellow));
 
-        let url_text = Paragraph::new(browser.active_tab().url_field.as_str()).block(url_block);
+        let url_text = Paragraph::new(browser.active_tab().url_field.as_str())
+            .style(Style::default().fg(Color::Yellow))
+            .block(url_block);
         f.render_widget(url_text, area);
     }
 
     // Exit screen
     if let Screen::Exit = browser.current_screen {
         let area = create_centered_rect(60, 5, f.size());
+        f.render_widget(Clear, area);
         let popup_block = Block::default()
             .title("Y/N")
             .borders(Borders::ALL)

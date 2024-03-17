@@ -16,11 +16,30 @@ pub struct Tab {
     pub url: String,
     pub url_field: String,
     pub content: String,
+    pub scroll: u16,
 }
 
 impl Tab {
     fn set_url(&mut self) {
         self.url = self.url_field.clone();
+    }
+
+    pub fn scroll_up(&mut self) {
+        if self.scroll.checked_sub(2).is_some() {
+            self.scroll -= 2;
+        }
+    }
+
+    pub fn scroll_down(&mut self, content_area_height: u16) {
+        if self.scroll.checked_add(2).is_some() {
+            let lines: u16 = self.content.lines().count().try_into().unwrap();
+            let limit = match lines.checked_sub(content_area_height) {
+                None => content_area_height,
+                Some(_) => lines - content_area_height,
+            };
+            let scroll = std::cmp::min(self.scroll + 2, limit);
+            self.scroll = scroll;
+        }
     }
 }
 
@@ -28,10 +47,10 @@ impl Tab {
 pub struct Browser {
     pub tabs: Vec<Tab>,
     pub active_tab: usize,
-    pub scroll: u16,
     pub should_exit: bool,
     pub current_screen: Screen,
     pub currently_typing: bool,
+    content_area_height: u16,
 }
 
 impl Browser {
@@ -40,10 +59,10 @@ impl Browser {
         Self {
             tabs: vec![tab],
             active_tab: 0,
-            scroll: 0,
             should_exit: false,
             current_screen: Screen::Main,
             currently_typing: false,
+            content_area_height: 0,
         }
     }
 
@@ -110,25 +129,22 @@ impl Browser {
         self.active_tab_mut().set_url();
     }
 
+    pub fn set_content_area_height(&mut self, height: u16) {
+        self.content_area_height = height;
+    }
+
+    pub fn scroll(&self) -> &u16 {
+        &self.active_tab().scroll
+    }
+
     pub fn scroll_up(&mut self) {
-        if self.scroll.checked_sub(2).is_some() {
-            self.scroll -= 2;
-        }
+        self.active_tab_mut().scroll_up();
     }
 
     pub fn scroll_down(&mut self) {
-        if self.scroll.checked_add(2).is_some() {
-            let scroll = std::cmp::min(
-                self.scroll + 2,
-                self.active_tab()
-                    .content
-                    .lines()
-                    .count()
-                    .try_into()
-                    .unwrap(),
-            );
-            self.scroll = scroll;
-        }
+        let height = self.content_area_height;
+        let active = self.active_tab_mut();
+        active.scroll_down(height);
     }
 }
 
@@ -148,9 +164,21 @@ mod tests {
     #[test]
     fn can_not_scroll_below_zero() {
         let mut browser = Browser::new();
-        assert_eq!(browser.scroll, 0);
+        assert_eq!(browser.active_tab().scroll, 0);
+        browser.set_content_area_height(50);
+        browser.scroll_up();
+        assert_eq!(browser.active_tab().scroll, 0);
+    }
+
+    #[test]
+    fn scrolls_only_the_active_tab() {
+        let mut browser = Browser::new();
+        assert_eq!(browser.active_tab().scroll, 0);
+        browser.set_content_area_height(50);
         browser.scroll_down();
-        assert_eq!(browser.scroll, 0);
+        assert_eq!(browser.active_tab().scroll, 2);
+        browser.new_tab();
+        assert_eq!(browser.active_tab().scroll, 0);
     }
 
     #[test]
