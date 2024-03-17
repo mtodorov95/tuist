@@ -183,3 +183,143 @@ pub fn parse(source: String) -> Node {
         elem("html".to_string(), HashMap::new(), nodes)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use std::collections::HashMap;
+
+    use crate::engine::{parse, ElementData, NodeType};
+
+    #[test]
+    fn parses_simple_text() {
+        let input = String::from("Some text");
+        let text = parse(input.clone());
+        assert_eq!(text.node_type, NodeType::Text(input));
+    }
+
+    #[test]
+    fn parses_simple_paragraph() {
+        let input = String::from("<p>Some text</p>");
+        let node = parse(input);
+        assert_eq!(
+            node.node_type,
+            NodeType::Element(ElementData {
+                tag: "p".to_string(),
+                attrs: HashMap::new()
+            })
+        );
+        assert_eq!(node.children.len(), 1);
+        assert_eq!(
+            node.children.first().unwrap().node_type,
+            NodeType::Text("Some text".to_string())
+        );
+    }
+
+    #[test]
+    fn infers_html_tag() {
+        let input = String::from("<!DOCTYPE html>");
+        let node = parse(input);
+        assert_eq!(
+            node.node_type,
+            NodeType::Element(ElementData {
+                tag: "html".to_string(),
+                attrs: HashMap::new()
+            })
+        );
+        assert_eq!(node.children.len(), 0);
+    }
+
+    #[test]
+    fn parses_nested_elements() {
+        let input = String::from(
+            "
+         <!DOCTYPE html>
+        <html>
+        <head>
+        <title>Title of the document</title>
+        </head>
+        </html> 
+                                 ",
+        );
+        let node = parse(input);
+        assert_eq!(
+            node.node_type,
+            NodeType::Element(ElementData {
+                tag: "html".to_string(),
+                attrs: HashMap::new()
+            })
+        );
+        assert_eq!(node.children.len(), 1);
+        let head = node.children.first().unwrap();
+
+        assert_eq!(
+            head.node_type,
+            NodeType::Element(ElementData {
+                tag: "head".to_string(),
+                attrs: HashMap::new()
+            })
+        );
+        assert_eq!(head.children.len(), 1);
+
+        let title = head.children.first().unwrap();
+
+        assert_eq!(
+            title.node_type,
+            NodeType::Element(ElementData {
+                tag: "title".to_string(),
+                attrs: HashMap::new()
+            })
+        );
+        assert_eq!(title.children.len(), 1);
+
+        let text = title.children.first().unwrap();
+
+        assert_eq!(
+            text.node_type,
+            NodeType::Text("Title of the document".to_string())
+        );
+        assert_eq!(text.children.len(), 0);
+    }
+
+    #[test]
+    fn parses_meta_tag() {
+        let input = String::from(
+            r#"
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            "#,
+        );
+        let node = parse(input);
+        assert_eq!(
+            node.node_type,
+            NodeType::Element(ElementData {
+                tag: "meta".to_string(),
+                attrs: HashMap::from([
+                    ("name".to_string(), "viewport".to_string()),
+                    (
+                        "content".to_string(),
+                        "width=device-width, initial-scale=1.0".to_string()
+                    )
+                ])
+            })
+        );
+        assert_eq!(node.children.len(), 0);
+    }
+
+    #[test]
+    fn parses_meta_tag_with_closing_slash() {
+        let input = String::from(
+            r#"
+              <meta charset="UTF-8"/>
+            "#,
+        );
+        let node = parse(input);
+        assert_eq!(
+            node.node_type,
+            NodeType::Element(ElementData {
+                tag: "meta".to_string(),
+                attrs: HashMap::from([("charset".to_string(), "UTF-8".to_string())])
+            })
+        );
+        assert_eq!(node.children.len(), 0);
+    }
+}

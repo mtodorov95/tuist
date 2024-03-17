@@ -6,13 +6,13 @@ pub struct Node {
     pub children: Vec<Node>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum NodeType {
     Text(String),
     Element(ElementData),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ElementData {
     pub tag: String,
     pub attrs: AttrMap,

@@ -17,4 +17,3 @@ Let's see how far it goes.
 - Add help screen
 - Render HTML elements correctly
 - Write tests for and improve the HTML parser
-- Fix scrolling past the end of a page
